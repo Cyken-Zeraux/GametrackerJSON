@@ -4,10 +4,12 @@ A quick HTML scrubber that JSON-ifies player table data and responds to cross do
 Currently returns top players from a staticly set server. Dynamic AJAX requests are being completed soon.
 
 <h3>Dependencies: </h3>
-PHP 5.5
-cURL
-SmartDOMDocument
-Jquery 1.11 and above
+<ul>
+<li>PHP 5.5</li>
+<li>cURL</li>
+<li>SmartDOMDocument</li>
+<li>Jquery 1.11 and above</li>
+</ul>
 
 <h3>Example Usage: </h3>
 <pre>
