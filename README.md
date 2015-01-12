@@ -2,8 +2,8 @@
 A quick HTML scrubber that JSON-ifies player table data and responds to cross domain or same domain requests.
 
 Currently returns top players from a staticly set server. Dynamic AJAX requests are being completed soon.
-
-Example Usage:
+<h3>Example Usage: </h3>
+<pre>
 $( document ).ready( function() {
   //Gets top players of a server
   var data = {"server": "209.246.143.162:27015", "query": ""};
@@ -23,3 +23,4 @@ $( document ).ready( function() {
   });
   return false;
 });
+</pre>
