@@ -1,4 +1,4 @@
-<!--
+<?php
 //The MIT License (MIT)
 //
 //Copyright (c) 2014 Cyken Zeraux aka CZauX
@@ -20,8 +20,7 @@
 //LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
--->
-<?php
+//
 header('content-type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: *");
 
@@ -123,6 +122,12 @@ foreach($toarraytospecific as $key => $arrayjs) {
     $i++;
 }
 
-echo $_GET['callback'] . '(' .  json_encode($toarrayjson) . ')';
+//Returns JSONP format or JSON format.
+if(isset($_GET['callback'])) {
+    echo $_GET['callback'] . '(' .  json_encode($toarrayjson) . ')'; //JSONP
+} else {
+    echo json_encode($toarrayjson); //JSON
+}
+
 }
 ?>
