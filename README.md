@@ -14,8 +14,8 @@ Currently returns top players from a staticly set server. Dynamic AJAX requests 
 <h3>Example Usage: </h3>
 <pre>
 $( document ).ready( function() {
-  //Gets top players of a server
-  var data = {"server": "209.246.143.162:27015", "query": ""};
+  //Gets top 50 players of a server as unique arrays.
+  var data = {"format": "table", "server": "209.246.143.162", "port": "27015", "query": "", "rows": "50"};
   data = $.param(data);
 
   $.ajax({
@@ -33,3 +33,17 @@ $( document ).ready( function() {
   return false;
 });
 </pre>
+<hr>
+<h3>Parameters</h3>
+<h5>format: <i>table|raw|none</i></h5>
+<p>table - returns a unique array for every data row, useful for tables.</p>
+<p>raw - returns the raw table element in HTML.</p>
+<p>none - default, returns unique array for every column.</p>
+<h5>server</h5>
+<p>Specifies the IPV4 IP of a game server.</p>
+<h5>port</h5> 
+<p>Specifies the Port used with the server IP.</p>
+<h5>query</h5>
+<p>Specifies the name to send through gametracker search.</p>
+<h5>rows</h5>
+<p>Specifies the amount of table rows to receive from the query</p>
