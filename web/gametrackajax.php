@@ -22,16 +22,6 @@
 //SOFTWARE.
 //
 require('../vendor/autoload.php');
-$app = new Silex\Application();
-$app['debug'] = true;
-// Register the monolog logging service
-$app->register(new Silex\Provider\MonologServiceProvider(), array(
-  'monolog.logfile' => 'php://stderr',
-));
-$app->get('/', function() use($app) {
-  $app['monolog']->addDebug('logging output.');
-});
-$app->run();
 
 header('content-type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: *");
