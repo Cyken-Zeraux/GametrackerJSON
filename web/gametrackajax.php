@@ -83,6 +83,7 @@ function unsetitles($array) {
     return array_values($array);
 }
 
+//The function to finally return JSON data, this script should only output this once.
 function jsonecho($jsonoutputvar) {
     if(isset($_GET['callback'])) {
         echo $_GET['callback'] . '(' .  json_encode($jsonoutputvar) . ')'; //JSONP
@@ -90,6 +91,7 @@ function jsonecho($jsonoutputvar) {
         echo json_encode($jsonoutputvar); //JSON
     }
 }
+
 
 $addechoque = array();
 $urlserver = '';
@@ -100,7 +102,7 @@ $urlrows = '';
 //Required - Checks IP
 if (isset($_GET['server'])) {
     $serverquest = $_GET['server'];
-    if (strlen($serverquest) < 40 && filter_var($serverquest, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+    if (strlen($serverquest) < 45 && (filter_var($serverquest, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false || filter_var($serverquest, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false)) {
         $urlserver = $serverquest;
     } else {
         $addechoque[] = "\nCritical Error: IP must be IPV4!";
@@ -159,10 +161,28 @@ if (count($addechoque) > 0) {
 
 $GTURL =  "http://www.gametracker.com/server_info/" . $urlserver . ':' . $urlport . '/top_players/' . $urlquery . $urlrows ;
 //https://www.gametracker.com/server_info/209.246.143.162:27015/top_players/?query=colgate&Search=Search&searchpge=2&searchipp=25#search
-$CURLPAGE = curlrequest($GTURL);
 
-//This is where the xpathing fun starts.
-$xpath = htmltoxpath($CURLPAGE, false);
+
+
+// Page catching
+$cachedir = dirname(__FILE__)."/cache/" ; // Directory to cache files in (keep outside web root)
+$cachetime = 300; // Seconds to cache files for
+$cacheext = '.html'; // Extension to give cached files (usually cache, htm, txt)
+$cachefile = $cachedir . md5($GTURL) . $cacheext; // Cache file to either load or create
+$ignore_page = false;
+
+$cachefile_created = ((@file_exists($cachefile)) and ($ignore_page === false)) ? @filemtime($cachefile) : 0;
+@clearstatcache();
+
+// Show file from cache if still valid
+if (time() - $cachetime < $cachefile_created) {
+    $xpath = htmltoxpath($cachefile, true);
+    $noneoldcache = false;
+} else {
+    $CURLPAGE = curlrequest($GTURL);
+    $xpath = htmltoxpath($CURLPAGE, false);
+    $noneoldcache = true;
+}
 
 //Seperates the selected Table by it's class, and then applies it as a new SmartDomDocument.
 $nodes = $xpath->query("//table[contains(@class, 'table_lst_spn')]")->item(0);
@@ -172,11 +192,25 @@ if ($nodes == NULL) {
     exit;
 }
 
+//Overwrites-generates new html cache file.
+if ($noneoldcache == true) {
+    $rawdomdoc = new SmartDOMDocument();
+    $rawdomdoc->appendChild($rawdomdoc->importNode($nodes, true));
+    $image = $rawdomdoc->saveHTMLExact();
+    $htmlstore = preg_replace('/^\s+|\n|\r|\s+$/m', '', $image);
+    $f = fopen($cachefile, "w+");
+    ftruncate($f, 0);
+    fwrite($f, $htmlstore);
+    fclose($f);
+    unset($f);
+}
+
 unset($xpath);
 $xpathtable = domdoctoxpath($nodes);
 $nodesTR = $xpathtable->query('//tr'); //Gets the TR elements
 $nodesTD = $xpathtable->query('//tr//td'); //Gets the TD elements inside of TR
 //DEBUG $nodesTRcount=$nodesTR->length;$nodesTDcount=$nodesTD->length;$nodescount=$nodesTDcount/$nodesTRcount;
+unset($xpathtable);
 
 $i = 0;
 $nodestorearray = array();
@@ -224,10 +258,15 @@ if(isset($_GET['format'])) {
         jsonecho($nodestorearray);
     }
     elseif ($outputformat === 'raw') {
-        $rawdomdoc = new SmartDOMDocument();
-        $rawdomdoc->appendChild($rawdomdoc->importNode($nodes, true));
-        $image = $rawdomdoc->saveHTMLExact();
-        jsonecho(preg_replace('/^\s+|\n|\r|\s+$/m', '', $image));
+        if ($noneoldcache == true) {
+            jsonecho($htmlstore);
+        } else {
+            $rawdomdoc = new SmartDOMDocument();
+            $rawdomdoc->appendChild($rawdomdoc->importNode($nodes, true));
+            $image = $rawdomdoc->saveHTMLExact();
+            $htmlstore = preg_replace('/^\s+|\n|\r|\s+$/m', '', $image);
+            jsonecho($htmlstore);
+        }
     } else {
         jsonecho($toarrayjson);
     }
