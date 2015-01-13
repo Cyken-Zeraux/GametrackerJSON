@@ -1,0 +1,19 @@
+﻿
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch heroku
+# Your branch is up-to-date with 'origin/heroku'.
+#
+# Changes to be committed:
+#	modified:   README.md
+#	deleted:    SmartDOMDocument.class.php
+#	deleted:    gametrackajax.php
+#
+# Untracked files:
+#	.gitignore
+#	Procfile
+#	composer.json
+#	composer.lock
+#	web/
+#
+
