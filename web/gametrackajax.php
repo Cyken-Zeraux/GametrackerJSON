@@ -152,7 +152,6 @@ if (isset($_GET['rows'])) {
     }
 }
 
-
 //Echo's critical errors to requester in a list form, then terminates program.
 if (count($addechoque) > 0) {
     jsonecho(implode('\n', $addechoque));
@@ -161,8 +160,6 @@ if (count($addechoque) > 0) {
 
 $GTURL =  "http://www.gametracker.com/server_info/" . $urlserver . ':' . $urlport . '/top_players/' . $urlquery . $urlrows ;
 //https://www.gametracker.com/server_info/209.246.143.162:27015/top_players/?query=colgate&Search=Search&searchpge=2&searchipp=25#search
-
-
 
 // Page catching
 $cachedir = dirname(__FILE__)."/cache/" ; // Directory to cache files in (keep outside web root)
@@ -268,10 +265,10 @@ if(isset($_GET['format'])) {
             jsonecho($htmlstore);
         }
     } else {
-        jsonecho($toarrayjson);
+        jsonecho($toarraytospecific);
     }
 } else {
-    jsonecho($toarrayjson);
+    jsonecho($toarraytospecific);
 }
 exit;
 ?>
