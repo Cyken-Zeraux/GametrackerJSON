@@ -15,7 +15,7 @@ This version is deployable to <a href="https://www.heroku.com/">Heroku</a>, whic
 <pre>
 $( document ).ready( function() {
   //Gets top players of a server
-  var data = {"server": "209.246.143.162:27015", "query": ""};
+  var data = {"server": "209.246.143.162", "port": "27015", "query": ""};
   data = $.param(data);
 
   $.ajax({
