@@ -29,6 +29,7 @@ header('content-type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: *");
 
 require_once(dirname(__FILE__)."/SmartDOMDocument.class.php");
+$version = "2.2";
 
 function supamicrotime() {
    list($usec, $sec) = explode(' ', microtime());
@@ -92,8 +93,12 @@ function jsonecho($jsonoutputvar) {
     }
 }
 
-
 $addechoque = array();
+
+$DEBUGserver = '';
+$DEBUGport = '';
+$DEBUGquery = '';
+$DEBUGrows = '';
 $urlserver = '';
 $urlport = '';
 $urlquery = '';
@@ -103,6 +108,7 @@ $urlrows = '';
 if (isset($_GET['server'])) {
     $serverquest = $_GET['server'];
     if (strlen($serverquest) < 45 && (filter_var($serverquest, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false || filter_var($serverquest, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false)) {
+        $DEBUGserver = $serverquest;
         $urlserver = $serverquest;
     } else {
         $addechoque[] = "\nCritical Error: IP must be IPV4!";
@@ -119,6 +125,7 @@ if (isset($_GET['port'])) {
         $portquest = intval($portquest);
         if (filter_var($portquest, FILTER_VALIDATE_INT) == true && $portquest > 0) {
             $urlport = $portquest;
+            $DEBUGport = (string)$portquest;
         } else {
             $addechoque[] = "Critical Error: Port must be a positive integer!";
         }
@@ -137,6 +144,7 @@ if (isset($_GET['port'])) {
 if (isset($_GET['query'])) {
     $queryquest = $_GET['query'];
     if (is_string($queryquest) && strlen($queryquest) < 200 && strlen($queryquest) > 0) {
+        $DEBUGquery = $queryquest;
         $queryquest = utf8_decode($queryquest);
         $urlquery = '?query=' . urlencode($queryquest) . '&Search=Search';
     }
@@ -147,6 +155,7 @@ if (isset($_GET['rows'])) {
     if (is_numeric($urlquest) && strlen($urlquest) <= 50) {
         $urlquest = intval($urlquest);
         if (filter_var($urlquest, FILTER_VALIDATE_INT) == true) {
+            $DEBUGrows = (string)$urlquest;
             $urlrows = '&searchipp=' . $urlquest;
         }
     }
@@ -164,21 +173,23 @@ $GTURL =  "http://www.gametracker.com/server_info/" . $urlserver . ':' . $urlpor
 // Page catching
 $cachedir = dirname(__FILE__)."/cache/" ; // Directory to cache files in (keep outside web root)
 $cachetime = 300; // Seconds to cache files for
-$cacheext = '.html'; // Extension to give cached files (usually cache, htm, txt)
+$cacheext = '.json'; // Extension to give cached files (usually cache, htm, txt)
 $cachefile = $cachedir . md5($GTURL) . $cacheext; // Cache file to either load or create
-$ignore_page = false;
 
-$cachefile_created = ((@file_exists($cachefile)) and ($ignore_page === false)) ? @filemtime($cachefile) : 0;
+$cachefile_created = @file_exists($cachefile) ? @filemtime($cachefile) : 0;
 @clearstatcache();
 
 // Show file from cache if still valid
 if (time() - $cachetime < $cachefile_created) {
-    $xpath = htmltoxpath($cachefile, true);
-    $noneoldcache = false;
+    $zerph = json_decode(file_get_contents($cachefile));
+    jsonecho($zerph);
+    $oldcache = false;
+    exit;
 } else {
     $CURLPAGE = curlrequest($GTURL);
+    $DEBUGnewpage = true;
     $xpath = htmltoxpath($CURLPAGE, false);
-    $noneoldcache = true;
+    $oldcache = true;
 }
 
 //Seperates the selected Table by it's class, and then applies it as a new SmartDomDocument.
@@ -187,19 +198,6 @@ $nodes = $xpath->query("//table[contains(@class, 'table_lst_spn')]")->item(0);
 if ($nodes == NULL) {
     jsonecho('Critical Error: Page does not exist');
     exit;
-}
-
-//Overwrites-generates new html cache file.
-if ($noneoldcache == true) {
-    $rawdomdoc = new SmartDOMDocument();
-    $rawdomdoc->appendChild($rawdomdoc->importNode($nodes, true));
-    $image = $rawdomdoc->saveHTMLExact();
-    $htmlstore = preg_replace('/^\s+|\n|\r|\s+$/m', '', $image);
-    $f = fopen($cachefile, "w+");
-    ftruncate($f, 0);
-    fwrite($f, $htmlstore);
-    fclose($f);
-    unset($f);
 }
 
 unset($xpath);
@@ -237,38 +235,70 @@ foreach($nodesarray0 as $key => $label) {
     $i++;
 }
 
-$i = 0;
-$toarrayjson = array();
-foreach($toarraytospecific as $key => $arrayjs) {
-    $jsray = array(${"dataarray$i"}[0] => unsetitles(${"dataarray$i"}));
-    $toarrayjson[] = $jsray;
-    //print_r($jsray);
-    $i++;
+function isempty($var) {
+    if (empty($var)) {
+     return "blank";
+    } else {
+    return $var;
+    }
 }
 
+$i = 0;
+$toarrayjson = array();
+$collection = new stdClass();
+for ($i = 0; $i < count($toarraytospecific); $i++) {
+    $collection->{isempty(${"dataarray$i"}[0])} = unsetitles(${"dataarray$i"});
+}
+
+$DEBUGarray = array("freshpage" => $DEBUGnewpage, "format" => "none", "GTserver" => $DEBUGserver, "GTport" => $DEBUGport, "rows" => $DEBUGrows, "revision" => $version);
 //Optional - Checks format type and outputs accordingly.
 //Defaults to columns as unique arrays.
 if(isset($_GET['format'])) {
     $outputformat = $_GET['format'];
     //Sends each player as a unique array, useful for tables.
     if ($outputformat === 'table') {
-        jsonecho($nodestorearray);
+        $jsonobjects = $nodestorearray;
+        $defaultformat = false;
     }
+    //Sends raw HTML table
     elseif ($outputformat === 'raw') {
-        if ($noneoldcache == true) {
-            jsonecho($htmlstore);
+        if ($oldcache == true) {
+            $jsonobjects = $htmlstore;
+            $defaultformat = false;
         } else {
             $rawdomdoc = new SmartDOMDocument();
             $rawdomdoc->appendChild($rawdomdoc->importNode($nodes, true));
             $image = $rawdomdoc->saveHTMLExact();
             $htmlstore = preg_replace('/^\s+|\n|\r|\s+$/m', '', $image);
-            jsonecho($htmlstore);
+            $jsonobjects = $htmlstore;
+            $defaultformat = false;
         }
+    //Defaults to columns as unique arrays.
     } else {
-        jsonecho($toarraytospecific);
+    $defaultformat = true;
     }
 } else {
-    jsonecho($toarraytospecific);
+    $defaultformat = true;
 }
+
+if ( $defaultformat == true ) {
+
+    $jsonobjects = array(
+	"Dataset" => $collection, 
+	"Debug" => $DEBUGarray
+	);
+}
+
+if ($oldcache = true) {
+    @clearstatcache();
+    $f = fopen($cachefile, "w+");
+    ftruncate($f, 0);
+    fwrite($f, json_encode($jsonobjects));
+    fclose($f);
+    unset($f);
+}
+
+jsonecho($jsonobjects);
+
 exit;
 ?>
