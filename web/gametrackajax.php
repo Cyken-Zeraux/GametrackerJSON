@@ -27,7 +27,6 @@ ini_set('display_errors', 1);
 
 header('content-type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept");
 
 require_once(dirname(__FILE__)."/SmartDOMDocument.class.php");
 $version = "2.2";
